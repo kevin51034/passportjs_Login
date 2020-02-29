@@ -3,7 +3,6 @@ const router = express.Router();
 const {
     ensureAuthenticated
 } = require('../config/auth');
-var Instascan = require('instascan');
 
 
 
