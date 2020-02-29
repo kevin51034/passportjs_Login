@@ -37,6 +37,7 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     //cookie: { secure: true }
+    cookie: { maxAge: 60 * 60 * 1000 }
 }))
 
 // Passport middleware
