@@ -2,16 +2,19 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const passport = require('passport');
+const { forwardAuthenticated } = require('../config/auth');
 
 //User model
 const User = require('../models/User');
 
 // Login Page
-router.get('/login', (req, res) => res.render('login'));
+//router.get('/login', (req, res) => res.render('login'));
+router.get('/login', forwardAuthenticated, (req, res) => res.render('login'));
 
 
 // Register Page
-router.get('/register', (req, res) => res.render('register'));
+//router.get('/register', (req, res) => res.render('register'));
+router.get('/register', forwardAuthenticated, (req, res) => res.render('register'));
 
 // Register Handle
 router.post('/register', (req, res) => {
@@ -19,12 +22,13 @@ router.post('/register', (req, res) => {
         name,
         email,
         password,
-        password2
+        password2,
+        role
     } = req.body;
     let errors = [];
 
     // check require fields
-    if (!name || !email || !password || !password2) {
+    if (!name || !email || !password || !password2 || !role) {
         errors.push({
             msg: 'Please enter all fields'
         });
@@ -48,7 +52,8 @@ router.post('/register', (req, res) => {
             name,
             email,
             password,
-            password2
+            password2,
+            role
         });
     }
     // pass validation
@@ -72,7 +77,8 @@ router.post('/register', (req, res) => {
                     const newUser = new User({
                         name,
                         email,
-                        password
+                        password,
+                        role
                     });
 
                     console.log(newUser);
@@ -104,7 +110,8 @@ router.post('/login', (req, res, next) => {
     passport.authenticate('local', {
         successRedirect: '/dashboard',
         failureRedirect: '/users/login',
-        failureFlash: true
+        failureFlash: true,
+        //session: false
     })(req, res, next);
 });
 

@@ -27,6 +27,14 @@
                         placeholder="Confirm Password"
                         value="<%= typeof password2 != 'undefined' ? password2 : '' %>" />
                 </div>
+                <div class="form-group">
+                    <label for="role">權限</label>
+                    <select type="role" id="role" name="role" class="form-control">
+                        <option selected disabled value="">Choose...</option>
+                        <option value='user'>一般</option>
+                        <option value='admin'>管理員</option>
+                    </select>
+                </div>
                 <button type="submit" class="btn btn-primary btn-block">
                     Register
                 </button>
