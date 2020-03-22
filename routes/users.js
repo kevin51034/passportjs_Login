@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const passport = require('passport');
-const { forwardAuthenticated } = require('../config/auth');
+const {
+    forwardAuthenticated,
+    checkRole,
+    ensureAuthenticated
+} = require('../config/auth');
 
 //User model
 const User = require('../models/User');
@@ -14,7 +18,10 @@ router.get('/login', forwardAuthenticated, (req, res) => res.render('login'));
 
 // Register Page
 //router.get('/register', (req, res) => res.render('register'));
-router.get('/register', forwardAuthenticated, (req, res) => res.render('register'));
+router.get('/register', ensureAuthenticated, checkRole, (req, res) => res.render('register'));
+
+router.get('/security', ensureAuthenticated, (req, res) => res.render('security'));
+
 
 // Register Handle
 router.post('/register', (req, res) => {
@@ -102,6 +109,99 @@ router.post('/register', (req, res) => {
                     })
                 }
             })
+    }
+})
+
+// Change password Handle
+router.post('/security', (req, res) => {
+    const {
+        email,
+        oldPassword,
+        newPassword,
+        newPassword2,
+    } = req.body;
+    let errors = [];
+
+    // check require fields
+    if (!email || !oldPassword || !newPassword || !newPassword2) {
+        errors.push({
+            msg: 'Please enter all fields'
+        });
+    }
+    // check same password
+    if (newPassword != newPassword2) {
+        errors.push({
+            msg: 'Pleasing enter the same password'
+        });
+    }
+    // check password length
+    if (newPassword.length < 6) {
+        errors.push({
+            msg: 'Password must be at least 6 characters'
+        });
+    }
+
+    if (errors.length > 0) {
+        res.render('security', {
+            email,
+            oldPassword,
+            newPassword,
+            newPassword2,
+        });
+    }
+    // pass validation
+    else {
+        User.findOne({
+            email: email
+        }, function (err, user) {
+            if (err) throw err
+            if (!user) {
+                errors.push({
+                    msg: 'Email is not registered'
+                });
+                res.render('security', {
+                    email,
+                    oldPassword,
+                    newPassword,
+                    newPassword2,
+                });
+            }
+
+            // check passport
+            bcrypt.compare(oldPassword, user.password, (err, isMatch) => {
+                if (err) throw err;
+                if (isMatch) {
+                    // Hash password
+                    bcrypt.genSalt(10, (err, salt) => {
+                        bcrypt.hash(newPassword, salt, (err, hash) => {
+                            if (err) throw err;
+
+                            user.password = hash;
+                            // save user
+                            user.save()
+                                .then(user => {
+                                    console.log(user);
+                                    req.flash('success_msg', 'Password updateed!');
+                                    res.redirect('/users/login');
+                                })
+                                .catch(err => console.log(err));
+                        })
+                    })
+                } else {
+                    console.log('Password incorrect')
+                    errors.push({
+                        msg: 'Password incorrect'
+                    });
+                    //req.flash('error_msg', 'Password incorrect');
+                    res.render('security', {
+                        email,
+                        oldPassword,
+                        newPassword,
+                        newPassword2,
+                    });
+                }
+            });
+        });
     }
 })
 
